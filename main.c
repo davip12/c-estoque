@@ -112,6 +112,7 @@ int menu_exibir(void) {
 }
 void esperar_enter(void) {
     printf("\nPressione ENTER para voltar ao menu...");
+    limpar_buffer();
 }
 
 estoque_t* estoque_criar(void) {
