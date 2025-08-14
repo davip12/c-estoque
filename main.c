@@ -208,12 +208,11 @@ void estoque_item_remover(estoque_t* estoque_ptr, char* item_nome) {
     if (!resultado) return;
 
     free(resultado->nome);
-    free(resultado);
-
     // tapa o buraco no estoque; decrementa a quantidade
-    for (int i = pos; i < --(estoque_ptr->quantidade_itens); i++) {
+    for (int i = pos; i < estoque_ptr->quantidade_itens - 1; i++) {
         estoque_ptr->dados[i] = estoque_ptr->dados[i+1];
     }
+    --(estoque_ptr->quantidade_itens);
 }
 itens_t* estoque_item_encontrar(estoque_t* estoque_ptr, const char* busca, int* pos_ptr) {
     if (!estoque_ptr || !busca) return NULL;
@@ -228,22 +227,36 @@ itens_t* estoque_item_encontrar(estoque_t* estoque_ptr, const char* busca, int* 
 }
 
 void estoque_ler(estoque_t* estoque_ptr) {
-    FILE* estoque_arquivo = fopen(ESTOQUE_ARQUIVO_NOME, "r+");
-    if (!estoque_ptr || !estoque_arquivo) ;
+    FILE* estoque_arquivo = fopen(ESTOQUE_ARQUIVO_NOME, "r");
+    if (!estoque_ptr || !estoque_arquivo) return;
 
     char item_nome[MAX_NOME] = {0};
     size_t item_quantidade = 0;
 
-    while (fscanf(estoque_arquivo, "%499s\n%zu\n", item_nome, &item_quantidade) == 2) {
-        if (!item_quantidade) continue;
-        estoque_item_anexar(estoque_ptr, item_nome, item_quantidade);
+    while (fgets(item_nome, sizeof(item_nome), estoque_arquivo)) {
+        trim(item_nome); // remove espaços e \n
+
+        if (item_nome[0] == '\0') continue; // pula linhas vazias
+
+        if (fscanf(estoque_arquivo, "%zu\n", &item_quantidade) != 1) {
+            fprintf(stderr, "Erro ao ler quantidade do item \"%s\".\n", item_nome);
+            break;
+        }
+        if (item_quantidade > 0) {
+            estoque_item_anexar(estoque_ptr, item_nome, item_quantidade);
+        }
     }
+    fclose(estoque_arquivo);
 }
 void estoque_gravar(estoque_t* estoque_ptr) {
     if (!estoque_ptr) return;
     if (!estoque_ptr->quantidade_itens) return;
 
     FILE* estoque_arquivo = fopen(ESTOQUE_ARQUIVO_NOME, "w");
+    if (!estoque_arquivo) {
+        fprintf(stderr, "em %s:\n\tERRO: Falha ao abrir arquivo de estoque.\n", __func__);
+        return;
+    } 
     for (size_t i = 0; i < estoque_ptr->quantidade_itens; i++) {
         fprintf(
             estoque_arquivo, 
@@ -269,7 +282,7 @@ void estoque_adicionar(estoque_t* estoque_ptr) {
     }
 
     printf("Digite a quantiade: ");
-    if ((scanf("%zu", &item_quantidade) != 1) && item_quantidade <= 0) {
+    if ((scanf("%zu", &item_quantidade) != 1) || item_quantidade <= 0) {
         printf("Quantidade inválida. Tente novamente.\n");
         return;
     }
@@ -292,7 +305,8 @@ void estoque_remover(estoque_t* estoque_ptr) {
     }
 
     printf("Digite a quantiade: ");
-    if ((scanf("%zu", &item_quantidade) != 1) && item_quantidade <= 0) {
+    if ((scanf("%zu", &item_quantidade) != 1) && (item_quantidade <= 0)) {
+        limpar_buffer();
         printf("Quantidade inválida. Tente novamente.\n");
         return;
     }
@@ -304,8 +318,12 @@ void estoque_remover(estoque_t* estoque_ptr) {
     }
     if (agulha->quantidade >= item_quantidade) {
         agulha->quantidade -= item_quantidade;
-        if (agulha->quantidade > 0) printf("Quantidade atualizada com sucesso!\n");
-        else printf("Item removido do estoque!\n");
+        if (agulha->quantidade > 0) {
+            printf("Quantidade atualizada com sucesso!\n");
+        } else {
+            printf("Item removido do estoque!\n");
+            estoque_item_remover(estoque_ptr, item_nome);
+        }
         estoque_gravar(estoque_ptr);
         return;
     } else {
