@@ -32,6 +32,7 @@ void limpar_buffer(void);
 void trim(char* str);
 
 int menu_exibir(void);
+void esperar_enter(void);
 
 estoque_t* estoque_criar(void);
 void estoque_destruir(estoque_t* estoque_ptr);
@@ -57,9 +58,9 @@ int main() {
         int opcao = menu_exibir();
         switch (opcao)
         {
-        case ADICIONAR: estoque_adicionar(estoque); break;
-        case REMOVER: estoque_remover(estoque); break;
-        case LISTAR: estoque_listar(estoque); break;
+        case ADICIONAR: estoque_adicionar(estoque); esperar_enter(); break;
+        case REMOVER:   estoque_remover(estoque);   esperar_enter(); break;
+        case LISTAR:    estoque_listar(estoque);    esperar_enter(); break;
         case SAIR: 
             sair = true; 
             printf("Obrigado por usar o Controle de Estoques! Até a próxima.\n"); 
@@ -72,47 +73,14 @@ int main() {
     estoque_destruir(estoque);
 }
 
-void limpar_buffer(void) {
-    char c;
-    while ((c = getchar()) != '\n' && c != EOF) { ;}
-}
-void trim(char *str) {
-    if (!str) return;
-
-    // --- Remove espaços do início ---
-    char *start = str;
-    while (isspace((unsigned char)*start)) {
-        start++;
-    }
-
-    // Se a string é só espaços, zera
-    if (*start == '\0') {
-        str[0] = '\0';
-        return;
-    }
-
-    // --- Remove espaços do fim ---
-    char *end = start + strlen(start) - 1;
-    while (end > start && isspace((unsigned char)*end)) {
-        end--;
-    }
-    *(end + 1) = '\0'; // coloca terminador no novo fim
-
-    // --- Move o conteúdo para o início ---
-    if (start != str) {
-        memmove(str, start, strlen(start) + 1);
-    }
-}
-
 int menu_exibir(void) {
-    /*
+    
     #ifdef _WIN32
         system("cls");
     #else
         system("clear");
     #endif
-    */
-
+    
     printf( "=============================\n"
             "    Controle de Estoque      \n"
             "=============================\n"
@@ -141,6 +109,9 @@ int menu_exibir(void) {
         }
     }
     return opcao;
+}
+void esperar_enter(void) {
+    printf("\nPressione ENTER para voltar ao menu...");
 }
 
 estoque_t* estoque_criar(void) {
@@ -348,4 +319,36 @@ void estoque_listar(estoque_t* estoque_ptr) {
             estoque_ptr->dados[i].quantidade
         );
     }   
+}
+
+void limpar_buffer(void) {
+    char c;
+    while ((c = getchar()) != '\n' && c != EOF) { ;}
+}
+void trim(char *str) {
+    if (!str) return;
+
+    // --- Remove espaços do início ---
+    char *start = str;
+    while (isspace((unsigned char)*start)) {
+        start++;
+    }
+
+    // Se a string é só espaços, zera
+    if (*start == '\0') {
+        str[0] = '\0';
+        return;
+    }
+
+    // --- Remove espaços do fim ---
+    char *end = start + strlen(start) - 1;
+    while (end > start && isspace((unsigned char)*end)) {
+        end--;
+    }
+    *(end + 1) = '\0'; // coloca terminador no novo fim
+
+    // --- Move o conteúdo para o início ---
+    if (start != str) {
+        memmove(str, start, strlen(start) + 1);
+    }
 }
